@@ -1,0 +1,7 @@
+locust
+redis
+psutil
+python-dotenv
+gTTS
+pillow
+numpy
