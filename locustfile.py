@@ -7,107 +7,142 @@ from tasks.sandbox_tasks import SandboxTasks
 from tasks.file_tasks import FileTasks
 from config import Config
 
-class DifyAPIUser(HttpUser):
-   """Dify API 負荷テストクラス"""
-   
-   host = Config.API_HOST
-   wait_time = between(1, 3)
-   
-   def on_start(self):
-       self.api = APITasks(self)
-       self.chat = ChatTasks(self)
-       self.knowledge = KnowledgeTasks(self)
-       self.workflow = WorkflowTasks(self)
-       self.file = FileTasks(self)
 
-   @task(3)
-   def perform_chat_operations(self):
-       """チャット機能のテスト"""
-       self.chat.perform_chat_tasks()
+class BaseUser(HttpUser):
+    """基本ユーザークラス"""
 
-   @task(2)
-   def perform_knowledge_operations(self):
-       """ナレッジベース機能のテスト"""
-       self.knowledge.perform_knowledge_tasks()
+    abstract = True  # これは直接インスタンス化されないクラス
 
-   @task(2)
-   def perform_file_operations(self):
-       """ファイル操作のテスト"""
-       self.file.perform_file_tasks()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.api = None  # APITasksのインスタンスを保持
 
-   @task(1)
-   def perform_workflow_operations(self):
-       """ワークフロー機能のテスト"""
-       self.workflow.perform_workflow_tasks()
 
-class DifySandboxUser(HttpUser):
-   """Dify Sandbox 負荷テストクラス"""
-   
-   host = Config.SANDBOX_HOST
-   wait_time = between(1, 2)
-   
-   def on_start(self):
-       self.sandbox = SandboxTasks(self)
+class DifyChatUser(BaseUser):
+    """Dify Chat テスト用ユーザークラス"""
 
-   @task(3)
-   def perform_sandbox_operations(self):
-       """Sandboxの機能テスト"""
-       self.sandbox.perform_sandbox_tasks()
+    host = Config.API_HOST
+    wait_time = between(1, 3)
 
-@events.init.add_listener
-def on_locust_init(environment, **kwargs):
-   """テスト開始時の初期化処理"""
-   print(f"Starting Dify load test with {environment.host}")
+    def on_start(self):
+        """初期化処理"""
+        self.api = APITasks(self)
+        self.chat = ChatTasks(self, Config.CHATFLOW_API_KEY)
 
-@events.quitting.add_listener
-def on_locust_quit(environment, **kwargs):
-   """テスト終了時の処理"""
-   if environment.stats.total.fail_ratio > Config.PERFORMANCE.get("error_rate", 0.01):
-       print("Test failed due to high error rate")
-       environment.process_exit_code = 1
-   
-   print("\nTest Summary:")
-   print(f"Total Requests: {environment.stats.total.num_requests}")
-   print(f"Failed Requests: {environment.stats.total.num_failures}")
-   print(f"Average Response Time: {environment.stats.total.avg_response_time:.2f}ms")
-   print(f"95th Percentile: {environment.stats.total.get_response_time_percentile(0.95):.2f}ms")
+    @task(1)
+    def chat_operations(self):
+        """チャット機能のテスト"""
+        self.chat.perform_chat_tasks()
 
-def run():
-   """メイン実行関数"""
-   import sys
-   from locust.env import Environment
-   from locust.stats import stats_printer, stats_history
-   from locust.log import setup_logging
-   import logging
-   
-   # ロギング設定
-   setup_logging("INFO", None)
-   
-   # テスト環境の設定
-   env = Environment(
-       user_classes=[DifyAPIUser, DifySandboxUser],
-       events=events,
-    #    host=Config.API_HOST
-   )
-   
-   # 統計情報の出力設定
-   env.create_local_runner()
-   env.create_web_ui()
-   
-   try:
-       env.runner.start(
-           user_count=Config.LOAD_TEST["users"]["api"] + Config.LOAD_TEST["users"]["sandbox"],
-           spawn_rate=Config.LOAD_TEST["spawn_rate"]
-       )
-       stats_printer(env.stats)
-       stats_history(env.runner)
-       env.web_ui.start()
-       env.runner.greenlet.join()
-       
-   except KeyboardInterrupt:
-       logging.info("Test interrupted by user")
-   finally:
-       env.runner.quit()
+
+class DifyWorkflowUser(BaseUser):
+    """Dify Workflow テスト用ユーザークラス"""
+
+    host = Config.API_HOST
+    wait_time = between(1, 3)
+
+    def on_start(self):
+        """初期化処理"""
+        self.api = APITasks(self)
+        self.workflow = WorkflowTasks(self, Config.WORKFLOW_API_KEY)
+
+    @task(1)
+    def workflow_operations(self):
+        """ワークフロー機能のテスト"""
+        self.workflow.perform_workflow_tasks()
+
+
+class DifyFileUser(BaseUser):
+    """Dify File テスト用ユーザークラス"""
+
+    host = Config.API_HOST
+    wait_time = between(1, 3)
+
+    def on_start(self):
+        """初期化処理"""
+        self.api = APITasks(self)
+        self.file = FileTasks(self, Config.CHATFLOW_API_KEY)
+
+    @task(1)
+    def file_operations(self):
+        """ファイル操作のテスト"""
+        self.file.perform_file_tasks()
+
+
+class DifyKnowledgeUser(BaseUser):
+    """Dify Knowledge テスト用ユーザークラス"""
+
+    host = Config.API_HOST
+    wait_time = between(1, 3)
+
+    def on_start(self):
+        """初期化処理"""
+        self.api = APITasks(self)
+        self.knowledge = KnowledgeTasks(self, Config.KNOWLEDGE_API_KEY)
+
+    @task(1)
+    def knowledge_operations(self):
+        """ナレッジベース機能のテスト"""
+        self.knowledge.perform_knowledge_tasks()
+
+
+class DifySandboxUser(BaseUser):
+    """Sandbox テスト用ユーザークラス"""
+
+    host = Config.SANDBOX_HOST
+    wait_time = between(1, 2)
+
+    def on_start(self):
+        """初期化処理"""
+        self.sandbox = SandboxTasks(self, Config.SANDBOX_API_KEY)
+
+    @task(1)
+    def sandbox_operations(self):
+        """Sandbox機能のテスト"""
+        self.sandbox.perform_sandbox_tasks()
+
+
+def run_test(testcase="all"):
+    """テストの実行"""
+    from locust.env import Environment
+    from locust.stats import stats_printer, stats_history
+    import logging
+
+    logging.info("testcase")
+    logging.info(testcase)
+    # テストケースに応じてユーザークラスを選択
+    if testcase == "chat":
+        user_classes = [DifyChatUser]
+    elif testcase == "workflow":
+        user_classes = [DifyWorkflowUser]
+    elif testcase == "file":
+        user_classes = [DifyFileUser]
+    elif testcase == "knowledge":
+        user_classes = [DifyKnowledgeUser]
+    elif testcase == "sandbox":
+        user_classes = [DifySandboxUser]
+    else:
+        user_classes = [DifyChatUser, DifyWorkflowUser, DifyFileUser, DifyKnowledgeUser, DifySandboxUser]
+
+    # 環境設定
+    env = Environment(user_classes=user_classes, events=events)
+
+    # 統計情報の設定
+    env.create_local_runner()
+
+    # テスト実行
+    try:
+        env.runner.start(user_count=Config.LOAD_TEST["users"], spawn_rate=Config.LOAD_TEST["spawn_rate"])
+        env.runner.greenlet.join()
+    except KeyboardInterrupt:
+        logging.info("Test interrupted by user")
+    finally:
+        env.runner.quit()
+
 
 if __name__ == "__main__":
-   run()
+    import sys
+
+    # コマンドライン引数からテストケースを取得
+    testcase = sys.argv[1] if len(sys.argv) > 1 else "all"
+    run_test(testcase)
