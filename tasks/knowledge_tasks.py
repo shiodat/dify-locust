@@ -28,7 +28,7 @@ class KnowledgeTasks(TaskSet):
             "provider": "vendor",
         }
 
-        with self.client.post("/datasets", json=payload, headers=self.headers, name="/datasets/create") as response:
+        with self.client.post("/datasets", json=payload, headers=self.headers, name="Knowledge /datasets") as response:
             if response.status_code == 200:
                 data = response.json()
                 self.dataset_id = data.get("id")
@@ -50,7 +50,7 @@ class KnowledgeTasks(TaskSet):
             f"/datasets/{self.dataset_id}/document/create-by-text",
             json=payload,
             headers=self.headers,
-            name="/documents/create-by-text",
+            name="Knowledge /datasets/:dataset_id/document/create-by-text",
         ) as response:
             if response.status_code == 200:
                 data = response.json()
@@ -75,7 +75,7 @@ class KnowledgeTasks(TaskSet):
             f"/datasets/{self.dataset_id}/document/create-by-file",
             files=files,
             headers={"Authorization": self.headers["Authorization"]},
-            name="/documents/create-by-file",
+            name="Knowledge /datasets/:dataset_id/document/create-by-file",
         ) as response:
             if response.status_code == 200:
                 data = response.json()
@@ -91,7 +91,10 @@ class KnowledgeTasks(TaskSet):
         params = {"page": 1, "limit": 20, "keyword": ""}
 
         with self.client.get(
-            f"/datasets/{self.dataset_id}/documents", params=params, headers=self.headers, name="/documents/list"
+            f"/datasets/{self.dataset_id}/documents",
+            params=params,
+            headers=self.headers,
+            name="Knowledge /datasets/:dataset_id/documents",
         ) as response:
             self.api.handle_response(response, "get_documents")
 
@@ -104,7 +107,7 @@ class KnowledgeTasks(TaskSet):
         with self.client.get(
             f"/datasets/{self.dataset_id}/documents/{self.batch_id}/indexing-status",
             headers=self.headers,
-            name="/documents/indexing-status",
+            name="Knowledge /datasets/:dataset_id/documents/:batch_id/indexing-status",
         ) as response:
             self.api.handle_response(response, "check_indexing_status")
 
@@ -117,7 +120,7 @@ class KnowledgeTasks(TaskSet):
             with self.client.get(
                 f"/datasets/{self.dataset_id}/documents/{self.batch_id}/indexing-status",
                 headers=self.headers,
-                name="/documents/indexing-status",
+                name="Knowledge /datasets/:dataset_id/documents/:batch_id/indexing-status",
             ) as response:
                 if response.json()["data"][0]["indexing_status"] == "completed":
                     return True
@@ -145,7 +148,10 @@ class KnowledgeTasks(TaskSet):
         }
 
         with self.client.post(
-            f"/datasets/{self.dataset_id}/retrieve", json=payload, headers=self.headers, name="/datasets/retrieve"
+            f"/datasets/{self.dataset_id}/retrieve",
+            json=payload,
+            headers=self.headers,
+            name="Knowledge /datasets/:dataset_id/retrieve",
         ) as response:
             self.api.handle_response(response, "retrieve_knowledge")
 
@@ -161,7 +167,7 @@ class KnowledgeTasks(TaskSet):
             f"/datasets/{self.dataset_id}/documents/{self.document_id}/segments",
             json=payload,
             headers=self.headers,
-            name="/documents/segments/add",
+            name="Knowledge /datasets/:dataset_id/documents/:document_id/segments",
         ) as response:
             if response.status_code == 200:
                 data = response.json()
@@ -177,7 +183,7 @@ class KnowledgeTasks(TaskSet):
         with self.client.delete(
             f"/datasets/{self.dataset_id}/documents/{self.document_id}",
             headers=self.headers,
-            name="/documents/delete",
+            name="Knowledge /datasets/:dataset_id/documents/:document_id",
         ) as response:
             if response.status_code == 200:
                 self.document_id = None
@@ -190,7 +196,7 @@ class KnowledgeTasks(TaskSet):
             return
 
         with self.client.delete(
-            f"/datasets/{self.dataset_id}", headers=self.headers, name="/datasets/delete"
+            f"/datasets/{self.dataset_id}", headers=self.headers, name="Knowledge /datasets/:dataset_id"
         ) as response:
             if response.status_code == 204:
                 self.dataset_id = None

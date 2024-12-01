@@ -55,7 +55,7 @@ class WorkflowTasks(TaskSet):
             return
 
         with self.client.get(
-            f"/workflows/run/{self.workflow_id}", headers=self.headers, name="/workflows/status"
+            f"/workflows/run/{self.workflow_id}", headers=self.headers, name="Workflow /workflows/run/:workflow_id"
         ) as response:
             self.api.handle_response(response, "get_workflow_status")
 
@@ -78,7 +78,10 @@ class WorkflowTasks(TaskSet):
         payload = {"user": self.api.user_id}
 
         with self.client.post(
-            f"/workflows/tasks/{self.task_id}/stop", json=payload, headers=self.headers, name="/workflows/stop"
+            f"/workflows/tasks/{self.task_id}/stop",
+            json=payload,
+            headers=self.headers,
+            name="Workflow /workflows/tasks/:task_id/stop",
         ) as response:
             if response.status_code == 200:
                 self.task_id = None
@@ -87,7 +90,7 @@ class WorkflowTasks(TaskSet):
     def get_parameters(self) -> Optional[dict]:
         """アプリケーション情報を取得"""
         with self.client.get(
-            "/parameters", headers=self.headers, name="/parameters", params={"user": self.api.user_id}
+            "/parameters", headers=self.headers, name="Workflow /parameters", params={"user": self.api.user_id}
         ) as response:
             if response.status_code == 200:
                 return response.json()
@@ -97,7 +100,7 @@ class WorkflowTasks(TaskSet):
     def get_meta(self) -> Optional[dict]:
         """アプリケーションのメタ情報を取得"""
         with self.client.get(
-            "/meta", headers=self.headers, name="/meta", params={"user": self.api.user_id}
+            "/meta", headers=self.headers, name="Workflow /meta", params={"user": self.api.user_id}
         ) as response:
             if response.status_code == 200:
                 return response.json()
@@ -113,7 +116,7 @@ class WorkflowTasks(TaskSet):
         start_time = time.time()
         while time.time() - start_time < timeout:
             with self.client.get(
-                f"/workflows/run/{workflow_id}", headers=self.headers, name="/workflows/monitor"
+                f"/workflows/run/{workflow_id}", headers=self.headers, name="Workflow /workflows/run/:workflow_id"
             ) as response:
                 if response.status_code == 200:
                     data = response.json()

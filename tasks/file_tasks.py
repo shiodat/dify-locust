@@ -75,7 +75,7 @@ class FileTasks(TaskSet):
                 files=files,
                 data=data,
                 headers={"Authorization": self.headers["Authorization"]},
-                name=f"/files/upload-{file_type}",
+                name=f"Files /files/upload-{file_type}",
             ) as response:
                 if response.status_code == 201:
                     file_id = response.json().get("id")

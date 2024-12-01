@@ -102,16 +102,30 @@ class DifySandboxUser(BaseUser):
         self.sandbox.perform_sandbox_tasks()
 
 
+class DifyChatflowSandboxUser(BaseUser):
+    """Dify Chat テスト用ユーザークラス"""
+
+    host = Config.API_HOST
+    wait_time = between(1, 3)
+
+    def on_start(self):
+        """初期化処理"""
+        self.api = APITasks(self)
+        self.chat = ChatTasks(self, Config.CHATFLOW_SANDBOX_API_KEY)
+
+    @task(1)
+    def chat_operations(self):
+        """チャット機能のテスト"""
+        self.chat.perform_only_chat_message()
+
+
 def run_test(testcase="all"):
     """テストの実行"""
     from locust.env import Environment
-    from locust.stats import stats_printer, stats_history
     import logging
 
-    logging.info("testcase")
-    logging.info(testcase)
     # テストケースに応じてユーザークラスを選択
-    if testcase == "chat":
+    if testcase == "chatflow":
         user_classes = [DifyChatUser]
     elif testcase == "workflow":
         user_classes = [DifyWorkflowUser]
@@ -121,6 +135,8 @@ def run_test(testcase="all"):
         user_classes = [DifyKnowledgeUser]
     elif testcase == "sandbox":
         user_classes = [DifySandboxUser]
+    elif testcase == "chatflow_sandbox":
+        user_classes = [DifyChatflowSandboxUser]
     else:
         user_classes = [DifyChatUser, DifyWorkflowUser, DifyFileUser, DifyKnowledgeUser, DifySandboxUser]
 

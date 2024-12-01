@@ -14,6 +14,7 @@ class Config:
     WORKFLOW_API_KEY = os.environ["WORKFLOW_API_KEY"]
     KNOWLEDGE_API_KEY = os.environ["KNOWLEDGE_API_KEY"]
     SANDBOX_API_KEY = os.environ["SANDBOX_API_KEY"]
+    CHATFLOW_SANDBOX_API_KEY = os.environ["CHATFLOW_SANDBOX_API_KEY"]
 
     # テスト設定
     LOAD_TEST = {"users": {"api": 100, "sandbox": 50}, "spawn_rate": 10, "duration": "30m"}

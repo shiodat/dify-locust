@@ -96,7 +96,7 @@ print(main())
             "/sandbox/run",
             json=payload,
             headers=self.headers,
-            name=f"/sandbox/run_{test_case['name']}",
+            name=f"Sandbox /sandbox/run_{test_case['name']}",
             catch_response=True,
         ) as response:
             if response.status_code == 200:

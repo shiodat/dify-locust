@@ -31,7 +31,7 @@ class ChatTasks(TaskSet):
             "/chat-messages",
             json=payload,
             headers=self.headers,
-            name="/chat-messages/send",
+            name="Chatflow /chat-messages",
             stream=(response_mode == "streaming"),
         ) as response:
             if response.status_code == 200:
@@ -67,7 +67,7 @@ class ChatTasks(TaskSet):
     def send_chat_message_streaming(self):
         return self._send_chat_message("streaming")
 
-    @task(1)
+    @task(2)
     def send_chat_message_blocking(self):
         return self._send_chat_message("blocking")
 
@@ -79,7 +79,7 @@ class ChatTasks(TaskSet):
 
         params = {"user": self.api.user_id, "conversation_id": self.conversation_id, "first_id": None, "limit": 20}
 
-        with self.client.get("/messages", params=params, headers=self.headers, name="/messages/history") as response:
+        with self.client.get("/messages", params=params, headers=self.headers, name="Chatflow /messages") as response:
             self.api.handle_response(response, "get_chat_history")
 
     @task(2)
@@ -94,7 +94,7 @@ class ChatTasks(TaskSet):
             f"/messages/{self.message_id}/suggested",
             params=params,
             headers=self.headers,
-            name="/messages/suggested",
+            name="Chatflow /messages/:message_id/suggested",
         ) as response:
             self.api.handle_response(response, "get_suggested_questions")
 
@@ -107,7 +107,10 @@ class ChatTasks(TaskSet):
         payload = {"rating": "like", "user": self.api.user_id}  # like or dislike
 
         with self.client.post(
-            f"/messages/{self.message_id}/feedbacks", json=payload, headers=self.headers, name="/messages/feedback"
+            f"/messages/{self.message_id}/feedbacks",
+            json=payload,
+            headers=self.headers,
+            name="Chatflow /messages/:message_id/feedbacks",
         ) as response:
             self.api.handle_response(response, "send_message_feedback")
 
@@ -136,7 +139,7 @@ class ChatTasks(TaskSet):
             f"/conversations/{self.conversation_id}/name",
             json=payload,
             headers=self.headers,
-            name="/conversations/rename",
+            name="Chatflow /conversations/:conversation_id/name",
         ) as response:
             self.api.handle_response(response, "rename_conversation")
 
@@ -152,7 +155,7 @@ class ChatTasks(TaskSet):
             f"/conversations/{self.conversation_id}",
             json=payload,
             headers=self.headers,
-            name="/conversations/delete",
+            name="Chatflow /conversations/:conversation_id",
         ) as response:
             if response.status_code == 200:
                 self.conversation_id = None
@@ -162,7 +165,7 @@ class ChatTasks(TaskSet):
     def get_parameters(self) -> Optional[dict]:
         """アプリケーション情報を取得"""
         with self.client.get(
-            "/parameters", headers=self.headers, name="/parameters", params={"user": self.api.user_id}
+            "/parameters", headers=self.headers, name="Chatflow /parameters", params={"user": self.api.user_id}
         ) as response:
             if response.status_code == 200:
                 return response.json()
@@ -172,11 +175,21 @@ class ChatTasks(TaskSet):
     def get_meta(self) -> Optional[dict]:
         """アプリケーションのメタ情報を取得"""
         with self.client.get(
-            "/meta", headers=self.headers, name="/meta", params={"user": self.api.user_id}
+            "/meta", headers=self.headers, name="Chatflow /meta", params={"user": self.api.user_id}
         ) as response:
             if response.status_code == 200:
                 return response.json()
             return None
+
+    def perform_only_chat_message(self):
+        try:
+            # メッセージ送信
+            if self.user.environment.runner.user_count % 5 == 0:
+                self.send_chat_message_blocking()
+            else:
+                self.send_chat_message_streaming()
+        except Exception as e:
+            self.api.log_error("chat_tasks", e)
 
     def perform_chat_tasks(self):
         """チャットタスクの一連の実行"""
